@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+  prediction:
+    build: prediction_service/
+    command: firefly prediction_app.predict --bind 0.0.0.0:5000
+    ports:
+      - "3000:5000"
+    volumes:
+      - ./models:/models
+    depends_on:
+      - training
+
+  training:
+    build: model_training_service/
+    command: python model_trainer.py --data-csv '/data/speech.csv' --model-file 'hate_speech_model'
+    volumes:
+      - ./data:/data
+      - ./models:/models
+    depends_on:
+      - data-downloader
+
+  data-downloader:
+    build: data_downloader_service/
+    command: python data_downloader.py --data-url 'https://raw.githubusercontent.com/t-davidson/hate-speech-and-offensive-language/master/data/labeled_data.csv' --save-loc '/data/speech.csv'
+    volumes:
+      - ./data:/data
